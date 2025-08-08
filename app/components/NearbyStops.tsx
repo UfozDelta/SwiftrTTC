@@ -3,11 +3,11 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator
 import * as Location from 'expo-location';
 
 export default function NearbyStops() {
-  const [location, setLocation] = useState(null);
+  const [location, setLocation] = useState<Location.LocationObject>();
   const [nearbyStops, setNearbyStops] = useState(null);
   const [arrivals, setArrivals] = useState({});
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState("");
   const [initialLoad, setInitialLoad] = useState(true);
 
   useEffect(() => {
@@ -33,7 +33,7 @@ export default function NearbyStops() {
     setLoading(true);
     try {
       const response = await fetch(
-        `http://192.168.0.11:5000/api/routes/stops/closest?lat=${location.coords.latitude}&lon=${location.coords.longitude}&num=7`
+        `http://10.0.0.37:5000/api/routes/stops/closest?lat=${location.coords.latitude}&lon=${location.coords.longitude}&num=7`
       );
       const data = await response.json();
       setNearbyStops(data);

@@ -19,7 +19,7 @@ export default function BusStop() {
     if (!stopId) return;
   
     try {
-      const response = await fetch(`http://192.168.0.11:5000/api/routes/stops/arrival?stopid=${stopId}`);
+      const response = await fetch(`http://10.0.0.37:5000/api/routes/stops/arrival?stopid=${stopId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch data');
       }
