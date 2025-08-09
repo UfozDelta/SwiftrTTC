@@ -39,7 +39,7 @@ export const BusStop = () => {
     if (!stopId) return;
     
     try {
-      const response = await fetch(`http://127.0.0.1:5000/api/routes/stops/arrival?stopid=${stopId}`);
+      const response = await fetch(`https://swiftrttc.onrender.com/api/routes/stops/arrival?stopid=${stopId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch data');
       }

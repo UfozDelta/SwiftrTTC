@@ -108,7 +108,7 @@ const LiveBusMap = () => {
   useEffect(() => {
     const fetchVehiclesData = async () => {
       try {
-        const response = await fetch('http://127.0.0.1:5000/api/routes/vehicles?route=76');
+        const response = await fetch('https://swiftrttc.onrender.com/api/routes/vehicles?route=76');
         if (!response.ok) throw new Error('Failed to fetch vehicles data');
         const data = await response.json();
         setVehicles(data);
@@ -129,7 +129,7 @@ const LiveBusMap = () => {
   useEffect(() => {
     const fetchStops = async () => {
       try {
-        const response = await fetch('http://127.0.0.1:5000/api/routes/stops?r=76');
+        const response = await fetch('https://swiftrttc.onrender.com/api/routes/stops?r=76');
         if (!response.ok) throw new Error('Failed to fetch stops');
         const data = await response.json();
         
