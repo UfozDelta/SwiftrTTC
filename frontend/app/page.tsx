@@ -1,3 +1,4 @@
+"use client"
 import {BusStop} from "@/components/BusStop";
 import Intro from "@/components/Intro";
 import LiveBusMap from "@/components/LiveMap";
@@ -7,7 +8,7 @@ export default function Home() {
     <div className="">
       <Intro />
       <BusStop />
-      <LiveBusMap />
+      {/* <LiveBusMap /> */}
     </div>
   );
 }

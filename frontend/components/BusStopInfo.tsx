@@ -25,6 +25,11 @@ const formatArrivalTime = (timestamp: string) => {
     }).toLowerCase()
 }
 
+interface BusStopInfoProps {
+  data: any;
+  num: string;
+}
+
 const formatRouteName = (name: string) => {
     // Remove dashes and split into words
     const words = name.split('-').join(' ').split(' ');
@@ -41,7 +46,7 @@ const grabNumFromString = (name:string) => {
     return words[0]
 }
 
-const BusStopInfo = ({ data, num }) => {
+const BusStopInfo: React.FC<BusStopInfoProps> = ({ data, num }) => {
   
   const [currentTime, setCurrentTime] = useState(Date.now())
   
