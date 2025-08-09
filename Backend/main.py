@@ -1,3 +1,4 @@
+import os
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import api
@@ -51,9 +52,8 @@ def get_vehicle_location():
 
     return jsonify(d)
 
-
-
-
-
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # app.run(host='0.0.0.0', port=5000, debug=True)
+    # For Prod
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
