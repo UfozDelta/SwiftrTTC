@@ -10,3 +10,6 @@ This project is a multi-platform application designed for Toronto Transit Commis
 1. **Render** for backend.
 2. **Vercel** for website.
 3. **Expo EAS** for appstore.
+
+# Service is usable at 
+[https://swiftr-gray.vercel.app/](https://swiftr-gray.vercel.app/)

@@ -19,6 +19,13 @@ def get_route_info():
 
     return jsonify(d)
 
+@app.route("/api/routes/stops/lines", methods=['GET'])
+def get_route_info_lines():
+    route_number = request.args.get('r')
+    d = api.get_stops_polylines(route_number)
+
+    return jsonify(d)
+
 @app.route('/api/routes/stops/arrival', methods=['GET'])
 def send_data():
 
