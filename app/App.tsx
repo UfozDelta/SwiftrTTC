@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import MapView, { PROVIDER_GOOGLE, Marker } from "react-native-maps";
+import MapView, { PROVIDER_GOOGLE, Marker, Polyline } from "react-native-maps";
 import { StyleSheet, View, ActivityIndicator, Text } from "react-native";
 import * as Location from "expo-location";
 
@@ -11,8 +11,16 @@ type Stop = {
   title: string;
 };
 
+type Point = {
+  lat: string;
+  lon: string;
+};
+
 export default function App() {
   const [stops, setStops] = useState<Stop[]>([]);
+  const [points, setPoints] = useState<{ latitude: number; longitude: number }[]>(
+    []
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{
@@ -21,17 +29,30 @@ export default function App() {
   } | null>(null);
 
   useEffect(() => {
-    const fetchStops = async () => {
+    const fetchData = async () => {
       try {
         const res = await fetch(
-          "https://swiftrttc.onrender.com/api/routes/stops?r=76"
+          "https://swiftrttc.onrender.com/api/routes/stops/lines?r=76"
         );
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
         const json = await res.json();
-        const stopsArray: Stop[] = Object.values(json);
+
+        // Stops
+        const stopsArray: Stop[] = Object.values(json).filter(
+          (item) => (item as any).stopId
+        ) as Stop[];
         setStops(stopsArray);
+
+        // Points
+        if (json.points && Array.isArray(json.points)) {
+          const pointCoords = json.points.map((p: Point) => ({
+            latitude: parseFloat(p.lat),
+            longitude: parseFloat(p.lon),
+          }));
+          setPoints(pointCoords);
+        }
       } catch (err) {
         setError((err as Error).message);
       } finally {
@@ -56,7 +77,7 @@ export default function App() {
       }
     };
 
-    fetchStops();
+    fetchData();
     fetchUserLocation();
   }, []);
 
@@ -102,6 +123,15 @@ export default function App() {
             description={`Stop ID: ${stop.stopId}`}
           />
         ))}
+
+        {/* Route Polyline */}
+        {points.length > 0 && (
+          <Polyline
+            coordinates={points}
+            strokeColor="#FF0000"
+            strokeWidth={3}
+          />
+        )}
       </MapView>
     </View>
   );
