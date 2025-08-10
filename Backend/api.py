@@ -66,8 +66,13 @@ def get_stops_polylines(route):
             point_dict['lat'] = point.get('lat')
             point_dict['lon'] = point.get('lon')
             paths.append(point_dict)
-
-    stops['points'] = paths
+    
+    paths_lone = []
+    for i in paths:
+        if i not in paths_lone:
+            paths_lone.append(i)
+    
+    stops['points'] = paths_lone
     return stops
 
 # Function to fetch direction data for a given route
