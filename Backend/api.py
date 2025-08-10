@@ -41,6 +41,35 @@ def get_stops(route):
 
     return stops
 
+def get_stops_polylines(route):
+    "Return all stops of {route} given with polylines in path file"
+    url = f"https://retro.umoiq.com/service/publicXMLFeed?command=routeConfig&a=ttc&r={route}"
+    response = requests.get(url)
+
+    xml_data = response.text
+    root = ET.fromstring(xml_data)
+    stops = {}
+    r = root.find("route")
+    for stop in r.findall("stop"):
+        stop_tag = stop.get("tag")
+        stops[stop_tag] = {
+            "title": stop.get("title"),
+            "stopId": stop.get("stopId"),
+            "lat": stop.get("lat"),
+            "lon": stop.get("lon"),
+            "stop_tag": stop_tag
+        }
+    paths = []
+    for path in r.findall("path"):
+        for point in path:
+            point_dict = {}
+            point_dict['lat'] = point.get('lat')
+            point_dict['lon'] = point.get('lon')
+            paths.append(point_dict)
+
+    stops['points'] = paths
+    return stops
+
 # Function to fetch direction data for a given route
 def get_directions_stops(route):
     """
