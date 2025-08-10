@@ -43,7 +43,7 @@ def get_stops(route):
 
 
 def get_stops_polylines(route):
-    """Return all stops of {route} given with polylines in path file"""
+    """Return all stops of {route} with separate path segments (like HTML version)"""
     url = f"https://retro.umoiq.com/service/publicXMLFeed?command=routeConfig&a=ttc&r={route}"
     response = requests.get(url)
     
@@ -52,52 +52,35 @@ def get_stops_polylines(route):
     stops = {}
     r = root.find("route")
     
-    # Get all stops
     for stop in r.findall("stop"):
         stop_tag = stop.get("tag")
         stops[stop_tag] = {
             "title": stop.get("title"),
             "stopId": stop.get("stopId"),
-            "lat": stop.get("lat"),
-            "lon": stop.get("lon"),
+            "lat": float(stop.get("lat")) if stop.get("lat") else None,
+            "lon": float(stop.get("lon")) if stop.get("lon") else None,
             "stop_tag": stop_tag
         }
     
-    # Process paths sequentially
-    all_paths = []
+    path_segments = []
+    
     for path in r.findall("path"):
-        path_points = []
+        segment_points = []
         for point in path:
-            point_dict = {
-                'lat': float(point.get('lat')),
-                'lon': float(point.get('lon'))
-            }
-            path_points.append(point_dict)
+            if point.get('lat') and point.get('lon'):
+                point_dict = {
+                    'lat': float(point.get('lat')),
+                    'lon': float(point.get('lon'))
+                }
+                segment_points.append(point_dict)
         
-        if path_points:  # Only add non-empty paths
-            all_paths.append(path_points)
+        if segment_points:
+            path_segments.append(segment_points)
     
-    # Connect paths in sequence, removing duplicates at connection points
-    connected_path = []
+    stops['path_segments'] = path_segments
+    stops['total_segments'] = len(path_segments)
+    stops['total_points'] = sum(len(segment) for segment in path_segments)
     
-    for i, path in enumerate(all_paths):
-        if i == 0:
-            # First path - add all points
-            connected_path.extend(path)
-        else:
-            # For subsequent paths, check if first point connects to last point of previous path
-            if connected_path and path:
-                last_point = connected_path[-1]
-                first_point = path[0]
-                
-                # If points are the same (connection point), skip the duplicate
-                if (abs(last_point['lat'] - first_point['lat']) < 0.00001 and 
-                    abs(last_point['lon'] - first_point['lon']) < 0.00001):
-                    connected_path.extend(path[1:])  # Skip first point (duplicate)
-                else:
-                    connected_path.extend(path)  # Add all points (gap in route)
-    
-    stops['points'] = connected_path
     return stops
 
 # Function to fetch direction data for a given route
