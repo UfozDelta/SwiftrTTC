@@ -41,15 +41,18 @@ def get_stops(route):
 
     return stops
 
+
 def get_stops_polylines(route):
-    "Return all stops of {route} given with polylines in path file"
+    """Return all stops of {route} given with polylines in path file"""
     url = f"https://retro.umoiq.com/service/publicXMLFeed?command=routeConfig&a=ttc&r={route}"
     response = requests.get(url)
-
+    
     xml_data = response.text
     root = ET.fromstring(xml_data)
     stops = {}
     r = root.find("route")
+    
+    # Get all stops
     for stop in r.findall("stop"):
         stop_tag = stop.get("tag")
         stops[stop_tag] = {
@@ -59,20 +62,42 @@ def get_stops_polylines(route):
             "lon": stop.get("lon"),
             "stop_tag": stop_tag
         }
-    paths = []
+    
+    # Process paths sequentially
+    all_paths = []
     for path in r.findall("path"):
+        path_points = []
         for point in path:
-            point_dict = {}
-            point_dict['lat'] = point.get('lat')
-            point_dict['lon'] = point.get('lon')
-            paths.append(point_dict)
+            point_dict = {
+                'lat': float(point.get('lat')),
+                'lon': float(point.get('lon'))
+            }
+            path_points.append(point_dict)
+        
+        if path_points:  # Only add non-empty paths
+            all_paths.append(path_points)
     
-    paths_lone = []
-    for i in paths:
-        if i not in paths_lone:
-            paths_lone.append(i)
+    # Connect paths in sequence, removing duplicates at connection points
+    connected_path = []
     
-    stops['points'] = paths_lone
+    for i, path in enumerate(all_paths):
+        if i == 0:
+            # First path - add all points
+            connected_path.extend(path)
+        else:
+            # For subsequent paths, check if first point connects to last point of previous path
+            if connected_path and path:
+                last_point = connected_path[-1]
+                first_point = path[0]
+                
+                # If points are the same (connection point), skip the duplicate
+                if (abs(last_point['lat'] - first_point['lat']) < 0.00001 and 
+                    abs(last_point['lon'] - first_point['lon']) < 0.00001):
+                    connected_path.extend(path[1:])  # Skip first point (duplicate)
+                else:
+                    connected_path.extend(path)  # Add all points (gap in route)
+    
+    stops['points'] = connected_path
     return stops
 
 # Function to fetch direction data for a given route
