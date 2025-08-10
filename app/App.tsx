@@ -12,15 +12,15 @@ type Stop = {
 };
 
 type Point = {
-  lat: string;
-  lon: string;
+  lat: number;
+  lon: number;
 };
+
+type PathSegment = Point[];
 
 export default function App() {
   const [stops, setStops] = useState<Stop[]>([]);
-  const [points, setPoints] = useState<{ latitude: number; longitude: number }[]>(
-    []
-  );
+  const [pathSegments, setPathSegments] = useState<PathSegment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{
@@ -39,22 +39,37 @@ export default function App() {
         }
         const json = await res.json();
 
-        // Stops
+        // Stops - filter out non-stop data
         const stopsArray: Stop[] = Object.values(json).filter(
           (item) => (item as any).stopId
         ) as Stop[];
         setStops(stopsArray);
 
-        // Points
-        if (json.points && Array.isArray(json.points)) {
-          const pointCoords = json.points.map((p: Point) => ({
-            latitude: parseFloat(p.lat),
-            longitude: parseFloat(p.lon),
+        // Path Segments - handle the new path_segments structure
+        if (json.path_segments && Array.isArray(json.path_segments)) {
+          // New format: array of path segments
+          const segments = json.path_segments.map((segment: Point[]) => 
+            segment.map((point: Point) => ({
+              lat: typeof point.lat === 'string' ? parseFloat(point.lat) : point.lat,
+              lon: typeof point.lon === 'string' ? parseFloat(point.lon) : point.lon,
+            }))
+          );
+          setPathSegments(segments);
+        } else if (json.points && Array.isArray(json.points)) {
+          // Fallback: old format with single points array
+          const singleSegment = json.points.map((p: Point) => ({
+            lat: typeof p.lat === 'string' ? parseFloat(p.lat) : p.lat,
+            lon: typeof p.lon === 'string' ? parseFloat(p.lon) : p.lon,
           }));
-          setPoints(pointCoords);
+          setPathSegments([singleSegment]); // Wrap in array to make it a segment
+        } else {
+          console.warn('No path data found in response');
+          setPathSegments([]);
         }
+
       } catch (err) {
         setError((err as Error).message);
+        console.error('Fetch error:', err);
       } finally {
         setLoading(false);
       }
@@ -73,7 +88,8 @@ export default function App() {
           longitude: location.coords.longitude,
         });
       } catch (err) {
-        setError((err as Error).message);
+        console.error('Location error:', err);
+        // Don't set error here, just log it - location is optional
       }
     };
 
@@ -81,18 +97,19 @@ export default function App() {
     fetchUserLocation();
   }, []);
 
-  if (loading && !userLocation) {
+  if (loading) {
     return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#00ff00" />
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#FF0000" />
+        <Text style={styles.loadingText}>Loading Route 76...</Text>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.container}>
-        <Text>Error: {error}</Text>
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Error: {error}</Text>
       </View>
     );
   }
@@ -121,18 +138,37 @@ export default function App() {
             }}
             title={stop.title}
             description={`Stop ID: ${stop.stopId}`}
+            pinColor="#0066CC"
           />
         ))}
 
-        {/* Route Polyline */}
-        {points.length > 0 && (
-          <Polyline
-            coordinates={points}
-            strokeColor="#FF0000"
-            strokeWidth={3}
-          />
-        )}
+        {/* Route Polylines - Multiple segments */}
+        {pathSegments.map((segment, index) => {
+          if (segment.length === 0) return null;
+          
+          const coordinates = segment.map((point) => ({
+            latitude: point.lat,
+            longitude: point.lon,
+          }));
+
+          return (
+            <Polyline
+              key={`segment-${index}`}
+              coordinates={coordinates}
+              strokeColor="#FF0000"
+              strokeWidth={4}
+            />
+          );
+        })}
       </MapView>
+      
+      {/* Debug Info */}
+      <View style={styles.debugInfo}>
+        <Text style={styles.debugText}>
+          Stops: {stops.length} | Segments: {pathSegments.length} | 
+          Points: {pathSegments.reduce((total, segment) => total + segment.length, 0)}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -144,6 +180,43 @@ const styles = StyleSheet.create({
   map: {
     width: '100%',
     height: '100%',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#242f3e',
+  },
+  loadingText: {
+    color: '#FFFFFF',
+    marginTop: 10,
+    fontSize: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#242f3e',
+    padding: 20,
+  },
+  errorText: {
+    color: '#FF0000',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  debugInfo: {
+    position: 'absolute',
+    bottom: 50,
+    left: 10,
+    right: 10,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    padding: 8,
+    borderRadius: 5,
+  },
+  debugText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    textAlign: 'center',
   },
 });
 
